@@ -9,7 +9,7 @@ const Book = require('./models/book');
 async function clear() {
   try {
     await Book.deleteMany({});
-    console.log('cats cleared from DB';)
+    console.log('books cleared from DB';)
   } catch (err) {
     console.log(err);
   } finally {
