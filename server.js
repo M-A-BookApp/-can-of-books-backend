@@ -32,6 +32,7 @@ app.get('/', (request, response) => {
 app.get('/books', getBooks);
 app.post('/books', postBooks);
 app.delete('/books/:id', deleteBooks);
+app.put('/books/:id', putBooks);
 
 //REST=>GET Mongoose Model.find()
 async function getBooks(request, response, next) {
@@ -54,22 +55,34 @@ async function postBooks(request, response, next) {
   console.log(request.body);
   try {
     let newBookInstance = await Book.create(request.body);
-    response.status(200).send(newBookInstance);
+    response.status(200).send(`New Book Added ${newBookInstance}`);
   }
   catch (error) {
     next(error);
   }
 }
 
-//REST=>Delete Mongoose Model.findByIdDelete()
+//REST=>Delete Mongoose Model.findByIdAndDelete()
 async function deleteBooks(request, response, next) {
   let id = request.params.id;
   try {
     console.log(id);
-    await Book.findByIdAndDeleted(id);
-    response.send('Book Deleted');
+    await Book.findByIdAndDelete(id);
+    response.send(`Book Deleted ${id}`);
   }
   catch (error) {
+    next(error);
+  }
+}
+//REST=>Delete Mongoose Model.findByIdAndUpdate)
+async function putBooks(request, response, next){
+  try{
+    let id = request.params.id;
+let updatedBook = await Book.findByIdAndUpdate(id, request.body,{new: true, overwrite: true})
+response.status(200).send(updatedBook);
+console.log(`book updated ${updatedBook}`);
+  }
+  catch(error){
     next(error);
   }
 }
