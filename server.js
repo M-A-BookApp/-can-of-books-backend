@@ -4,10 +4,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-
-const Book = require('./models/book.js')
-
+const Book = require('./models/book.js');
 mongoose.connect(process.env.DB_URL);
+const verifyUser = require('./auth');
+const { JwksRateLimitError } = require('jwks-rsa');
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -19,6 +19,7 @@ const app = express();
 
 //middleware
 app.use(cors());
+
 
 //must have this to receive json from a request
 app.use(express.json());
@@ -36,19 +37,26 @@ app.put('/books/:id', putBooks);
 
 //REST=>GET Mongoose Model.find()
 async function getBooks(request, response, next) {
-  try {
-    // let resultsEmail = await Book.find({email:req.query.email})
-    let queryObject = {};
-    if (request.query.location) {
-      queryObject.location = req.query.location;
+  verifyUser(request, async (err, user) => {
+    if (err) {
+      console.error(err);
+      response.send('invalid token');
+    } else {
+      try {
+        // let resultsEmail = await Book.find({email:req.query.email})
+        let queryObject = {};
+        if (user.email) {
+          queryObject.email = user.email;
+        }
+        //gets things from db .find
+        let results = await Book.find(queryObject);
+        response.status(200).send(results);
+      }
+      catch (error) {
+        next(error);
+      }
     }
-    //gets things from db .find
-    let results = await Book.find();
-    response.status(200).send(results);
-  }
-  catch (error) {
-    next(error);
-  }
+  });
 }
 //REST=>POST Mongoose Model.create()
 async function postBooks(request, response, next) {
@@ -75,14 +83,14 @@ async function deleteBooks(request, response, next) {
   }
 }
 //REST=>Delete Mongoose Model.findByIdAndUpdate)
-async function putBooks(request, response, next){
-  try{
+async function putBooks(request, response, next) {
+  try {
     let id = request.params.id;
-let updatedBook = await Book.findByIdAndUpdate(id, request.body,{new: true, overwrite: true})
-response.status(200).send(updatedBook);
-console.log(`book updated ${updatedBook}`);
+    let updatedBook = await Book.findByIdAndUpdate(id, request.body, { new: true, overwrite: true })
+    response.status(200).send(updatedBook);
+    console.log(`Book updated ${updatedBook}`);
   }
-  catch(error){
+  catch (error) {
     next(error);
   }
 }
